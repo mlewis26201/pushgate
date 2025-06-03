@@ -30,4 +30,21 @@ python tools/init_db.py
 
 This will create all tables as defined in the current models.
 
+## Requirements
+
+Before running the setup or init scripts, ensure you have the following Python modules installed:
+
+- sqlalchemy
+- cryptography
+- jinja2
+- requests
+
+You can install all required modules with:
+
+```bash
+pip install -r ../requirements.txt
+```
+
+(Assuming you are in the `tools/` directory; adjust the path as needed.)
+
 ---

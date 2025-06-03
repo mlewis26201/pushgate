@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  pushgate:
+    build: .
+    container_name: pushgate
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./pushgate.db
+    volumes:
+      - ./secrets:/run/secrets:ro
+      - ./pushgate.db:/app/pushgate.db
+    restart: unless-stopped

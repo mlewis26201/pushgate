@@ -6,17 +6,23 @@ A gateway for forwarding HTTP messages to Pushover, with token management, rate 
 
 Before running Pushgate for the first time, you must initialize secrets and the database:
 
-1. **Run the guided setup script:**
+1. **Run the guided setup script (required before docker-compose):**
    ```bash
    python tools/setup_pushgate.py
    ```
-   This will prompt you for the admin password, Pushover app token, user key, and optionally generate an encryption key. It will also initialize the database.
+   This will prompt you for the admin password, Pushover app token, user key, and optionally generate an encryption key. It will also initialize the database. **You must do this before running `docker-compose up` for the first time.**
 
 2. **(Re)initialize the database only:**
    ```bash
    python tools/init_db.py
    ```
    Use this if you want to reset the database tables without changing secrets.
+
+3. **Start the app with Docker Compose:**
+   ```bash
+   docker-compose up --build
+   ```
+   This will start the Pushgate service using the secrets and database you initialized above.
 
 Secrets are stored in `/run/secrets/` by default, or a directory you specify during setup.
 
@@ -114,6 +120,21 @@ All actions require admin authentication. Credentials are encrypted in the datab
 - Set the rate limit when creating or rotating a token in the admin UI.
 - The `/send` endpoint enforces this limit per token.
 - If the limit is exceeded, the API returns HTTP 429 with a message indicating the allowed rate.
+
+## Requirements for Setup Scripts
+
+Before running the setup or init scripts, ensure you have the following Python modules installed:
+
+- sqlalchemy
+- cryptography
+- jinja2
+- requests
+
+You can install all required modules with:
+
+```bash
+pip install -r requirements.txt
+```
 
 ## Environment
 - Python 3.11+
