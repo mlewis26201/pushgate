@@ -49,6 +49,11 @@ def main():
 
     secrets_dir = input(f"Secrets directory [{DEFAULT_SECRETS_DIR}]: ").strip() or DEFAULT_SECRETS_DIR
     os.makedirs(secrets_dir, exist_ok=True)
+    # Set permissions to 0o700 for the secrets directory to ensure write access (especially for Docker volume)
+    try:
+        os.chmod(secrets_dir, 0o700)
+    except Exception as e:
+        print(f"Warning: Could not set permissions on {secrets_dir}: {e}")
 
     # Fernet key
     fernet_path = os.path.join(secrets_dir, "fernet_key")
