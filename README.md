@@ -31,6 +31,48 @@ docker run -d \
 - `/pushgate/tokens`: Token management UI (admin)
 - `/pushgate/pushover-config`: Pushover config UI (admin)
 
+## Token Management Endpoints
+
+- `/pushgate/tokens` (GET): Admin UI to view all tokens.
+- `/pushgate/tokens/create` (POST): Create a new token.
+- `/pushgate/tokens/rotate` (POST): Rotate (replace) an existing token.
+- `/pushgate/tokens/delete` (POST): Delete a token.
+
+All actions require admin authentication. Tokens are encrypted at rest and displayed in the admin UI. Use the UI to manage tokens for client access.
+
+## Admin Authentication
+
+- `/pushgate/login` (GET/POST): Admin login page. Requires password (stored in Docker secret).
+- `/pushgate/logout` (GET): Log out admin session.
+
+All admin endpoints require authentication. Sessions are managed securely using FastAPI's session middleware.
+
+## Message Sending Endpoint
+
+- `/pushgate/send` (POST): Accepts a `token` and `message` via form data. Validates the token, checks per-token Pushover rate limit, sends the message to Pushover, and logs the message in the database. Returns a JSON response with status or error.
+
+Example request:
+
+```bash
+curl -X POST \
+  -F "token=YOUR_TOKEN" \
+  -F "message=Hello from Pushgate!" \
+  https://your.domain/pushgate/send
+```
+
+Possible responses:
+- `200 OK`: `{ "status": "ok", "pushover_response": "..." }`
+- `401 Unauthorized`: Invalid token
+- `429 Too Many Requests`: Rate limit exceeded
+- `502 Bad Gateway`: Pushover error
+
+## Pushover Configuration Endpoint
+
+- `/pushgate/pushover-config` (GET): Admin UI to view current Pushover app token and user key (decrypted for display).
+- `/pushgate/pushover-config/update` (POST): Update and save new Pushover credentials (encrypted at rest).
+
+All actions require admin authentication. Credentials are encrypted in the database and used for sending notifications.
+
 ## Environment
 - Python 3.11+
 - FastAPI

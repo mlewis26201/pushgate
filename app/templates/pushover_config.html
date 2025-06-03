@@ -7,15 +7,30 @@
 <body class="grey lighten-4">
     <nav class="blue-grey darken-3">
         <div class="nav-wrapper container">
-            <a href="#" class="brand-logo">Pushgate Admin</a>
+            <a href="/pushgate/tokens" class="brand-logo">Pushgate Admin</a>
+            <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <li><a href="/pushgate/tokens">Tokens</a></li>
+                <li class="active"><a href="/pushgate/pushover-config">Pushover Config</a></li>
+                <li><a href="/pushgate/logout">Logout</a></li>
+            </ul>
         </div>
     </nav>
-    <div class="container" style="margin-top: 2rem;">
+    <div class="container" style="margin-top: 2rem; max-width: 600px;">
         <h4>Pushover Configuration</h4>
         <div class="card">
             <div class="card-content">
                 <span class="card-title">Pushover API Settings</span>
-                <!-- Form to view/update Pushover app token and user key -->
+                <form method="post" action="/pushgate/pushover-config/update">
+                    <div class="input-field">
+                        <input id="app_token" name="app_token" type="text" value="{{ app_token }}" required>
+                        <label for="app_token" class="active">App Token</label>
+                    </div>
+                    <div class="input-field">
+                        <input id="user_key" name="user_key" type="text" value="{{ user_key }}" required>
+                        <label for="user_key" class="active">User Key</label>
+                    </div>
+                    <button class="btn blue-grey darken-3" type="submit">Update</button>
+                </form>
             </div>
         </div>
     </div>
