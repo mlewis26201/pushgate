@@ -10,6 +10,7 @@ A gateway for forwarding HTTP messages to Pushover, with token management, rate 
 - SQLite for persistent storage
 - All secrets and sensitive data encrypted with a key from Docker secrets
 - Dockerized for easy deployment
+- **Supports running behind a proxy with a path prefix (e.g. `/pushgate/`)**
 
 ## Quick Start
 
@@ -26,9 +27,9 @@ docker run -d \
 2. Place your secrets (fernet_key, admin_password) in `/path/to/secrets/`.
 
 ## Endpoints
-- `/send` (POST): Send a message (requires token)
-- `/tokens`: Token management UI (admin)
-- `/pushover-config`: Pushover config UI (admin)
+- `/pushgate/send` (POST): Send a message (requires token)
+- `/pushgate/tokens`: Token management UI (admin)
+- `/pushgate/pushover-config`: Pushover config UI (admin)
 
 ## Environment
 - Python 3.11+
@@ -40,3 +41,6 @@ docker run -d \
 ## Security
 - All secrets excluded from git via `.gitignore`
 - Tokens and Pushover config encrypted at rest
+
+## Reverse Proxy/Path Prefix
+If running behind a reverse proxy with a path prefix (e.g. `/pushgate/`), the app is pre-configured to work with this using FastAPI's `root_path` setting.

@@ -4,13 +4,17 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 import uvicorn
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import RequestResponseEndpoint
+from starlette.types import ASGIApp
 
 from .db import get_db, init_db
 from .auth import get_current_admin
 from .pushover import send_pushover_message
 from .rate_limit import check_token_rate_limit
 
-app = FastAPI()
+# Add root_path for proxy path prefix
+app = FastAPI(root_path="/pushgate")
 
 app.add_middleware(SessionMiddleware, secret_key="dummy")  # Will be replaced with Docker secret
 
