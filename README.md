@@ -24,7 +24,7 @@ Before running Pushgate for the first time, you must initialize secrets and the 
    ```
    This will start the Pushgate service using the secrets and database you initialized above.
 
-Secrets are stored in `/run/secrets/` by default, or a directory you specify during setup.
+Secrets are stored in `./secrets` by default, or a directory you specify during setup. The Docker container will mount this to `/run/secrets/` internally.
 
 ---
 

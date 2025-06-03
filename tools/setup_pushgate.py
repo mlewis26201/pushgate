@@ -14,7 +14,7 @@ import getpass
 from cryptography.fernet import Fernet
 from app.db import init_db
 
-DEFAULT_SECRETS_DIR = "/run/secrets/"
+DEFAULT_SECRETS_DIR = "./secrets"
 
 
 def prompt_secret(prompt, confirm=True, allow_empty=False):
