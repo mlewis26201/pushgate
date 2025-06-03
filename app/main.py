@@ -25,6 +25,9 @@ app.add_middleware(SessionMiddleware, secret_key="dummy")  # Will be replaced wi
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+from .crypto import decrypt
+# Register the 'decrypt' filter for Jinja2 templates
+templates.env.filters["decrypt"] = decrypt
 
 # CSRF token helpers
 CSRF_SESSION_KEY = "csrf_token"

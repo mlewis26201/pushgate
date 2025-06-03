@@ -38,6 +38,15 @@ def write_secret(path, value, mode=0o600):
 
 def main():
     print("--- Pushgate Guided Setup ---")
+    # Ensure app/static directory exists for FastAPI static files
+    static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "app", "static")
+    os.makedirs(static_dir, exist_ok=True)
+    # Optionally add a .gitkeep file so the directory is tracked by git
+    gitkeep_path = os.path.join(static_dir, ".gitkeep")
+    if not os.path.exists(gitkeep_path):
+        with open(gitkeep_path, "w") as f:
+            f.write("")
+
     secrets_dir = input(f"Secrets directory [{DEFAULT_SECRETS_DIR}]: ").strip() or DEFAULT_SECRETS_DIR
     os.makedirs(secrets_dir, exist_ok=True)
 
