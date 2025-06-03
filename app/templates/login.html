@@ -9,6 +9,9 @@
         <div class="card">
             <div class="card-content">
                 <span class="card-title">Admin Login</span>
+                {% if msg %}
+                <div class="card-panel green lighten-4 green-text text-darken-4">{{ msg }}</div>
+                {% endif %}
                 {% if error %}
                 <div class="card-panel red lighten-2 white-text">{{ error }}</div>
                 {% endif %}
