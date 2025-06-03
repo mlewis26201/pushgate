@@ -44,6 +44,10 @@ def verify_csrf(request: Request, token: str):
 def on_startup():
     init_db()
 
+@app.get("/", response_class=HTMLResponse)
+def index_page(request: Request, admin=Depends(get_current_admin)):
+    return templates.TemplateResponse("index.html", {"request": request})
+
 @app.get("/tokens", response_class=HTMLResponse)
 def tokens_page(request: Request, db: Session = Depends(get_db), admin=Depends(get_current_admin), msg: str = Query(None)):
     tokens = db.query(Token).all()

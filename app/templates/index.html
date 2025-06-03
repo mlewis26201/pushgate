@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pushgate Admin Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+</head>
+<body class="grey lighten-4">
+    <nav class="blue-grey darken-3">
+        <div class="nav-wrapper container">
+            <a href="/pushgate/" class="brand-logo">Pushgate Admin</a>
+            <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <li><a href="/pushgate/tokens">Tokens</a></li>
+                <li><a href="/pushgate/pushover-config">Pushover Config</a></li>
+                <li><a href="/pushgate/messages">Messages</a></li>
+                <li><a href="/pushgate/logout">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container" style="margin-top: 3rem; max-width: 700px;">
+        <div class="card-panel white z-depth-2">
+            <h3 class="blue-grey-text text-darken-3 center-align" style="margin-bottom: 2rem;">Welcome to Pushgate</h3>
+            <div class="row center-align">
+                <a href="/pushgate/tokens" class="waves-effect waves-light btn-large blue-grey darken-3" style="margin: 1rem;">
+                    <i class="material-icons left">vpn_key</i>Token Management
+                </a>
+                <a href="/pushgate/pushover-config" class="waves-effect waves-light btn-large blue-grey darken-2" style="margin: 1rem;">
+                    <i class="material-icons left">settings</i>Pushover Config
+                </a>
+                <a href="/pushgate/messages" class="waves-effect waves-light btn-large blue-grey" style="margin: 1rem;">
+                    <i class="material-icons left">history</i>Message History
+                </a>
+            </div>
+            <div class="section center-align" style="margin-top: 2rem;">
+                <a href="/pushgate/logout" class="btn-flat grey-text text-darken-2">Logout</a>
+            </div>
+        </div>
+    </div>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+</body>
+</html>
