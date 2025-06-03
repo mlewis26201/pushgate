@@ -48,7 +48,10 @@ def on_startup():
     init_db()
 
 @app.get("/", response_class=HTMLResponse)
-def index_page(request: Request, admin=Depends(get_current_admin)):
+def index_page(request: Request):
+    # If not logged in, redirect to login page
+    if not request.session.get("admin_authenticated"):
+        return RedirectResponse(url="/pushgate/login")
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.get("/tokens", response_class=HTMLResponse)
