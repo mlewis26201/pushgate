@@ -42,27 +42,30 @@ def tokens_page(request: Request, db: Session = Depends(get_db), admin=Depends(g
             "id": t.id,
             "token": decrypted,
             "created_at": t.created_at,
-            "last_used": t.last_used
+            "last_used": t.last_used,
+            "rate_limit_per_hour": t.rate_limit_per_hour
         })
     return templates.TemplateResponse("tokens.html", {"request": request, "tokens": decrypted_tokens, "msg": msg})
 
 @app.post("/tokens/create")
-def create_token(request: Request, db: Session = Depends(get_db), admin=Depends(get_current_admin)):
+def create_token(request: Request, db: Session = Depends(get_db), admin=Depends(get_current_admin), rate_limit_per_hour: int = Form(5)):
     new_token = secrets.token_urlsafe(32)
     encrypted = encrypt(new_token)
-    token_obj = Token(encrypted_token=encrypted, created_at=datetime.utcnow())
+    token_obj = Token(encrypted_token=encrypted, created_at=datetime.utcnow(), rate_limit_per_hour=rate_limit_per_hour)
     db.add(token_obj)
     db.commit()
     return RedirectResponse(url="/pushgate/tokens?msg=Token+created", status_code=303)
 
 @app.post("/tokens/rotate")
-def rotate_token(request: Request, token_id: int = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin)):
+def rotate_token(request: Request, token_id: int = Form(...), rate_limit_per_hour: int = Form(None), db: Session = Depends(get_db), admin=Depends(get_current_admin)):
     token_obj = db.query(Token).filter(Token.id == token_id).first()
     if not token_obj:
         return RedirectResponse(url="/pushgate/tokens?msg=Token+not+found", status_code=303)
     new_token = secrets.token_urlsafe(32)
     token_obj.encrypted_token = encrypt(new_token)
     token_obj.created_at = datetime.utcnow()
+    if rate_limit_per_hour is not None:
+        token_obj.rate_limit_per_hour = rate_limit_per_hour
     db.commit()
     return RedirectResponse(url="/pushgate/tokens?msg=Token+rotated", status_code=303)
 
@@ -117,13 +120,14 @@ def send_message(token: str = Form(...), message: str = Form(...), db: Session =
     if not valid_token:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    # Rate limit check
-    if not check_token_rate_limit(db, valid_token.id):
-        raise HTTPException(status_code=429, detail="Rate limit exceeded. Please try again later.")
+    # Rate limit check (per-token)
+    if not check_token_rate_limit(db, valid_token.id, valid_token.rate_limit_per_hour):
+        raise HTTPException(status_code=429, detail=f"Rate limit exceeded. Max {valid_token.rate_limit_per_hour} messages per hour. Please try again later.")
 
     # Send to Pushover
     status_code, resp_text = send_pushover_message(db, message)
     # Log message
+    from .models import Message
     msg = Message(token_id=valid_token.id, message=message, status=str(status_code), timestamp=datetime.utcnow())
     db.add(msg)
     db.commit()

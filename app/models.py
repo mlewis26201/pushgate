@@ -9,6 +9,7 @@ class Token(Base):
     encrypted_token = Column(String, unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_used = Column(DateTime)
+    rate_limit_per_hour = Column(Integer, default=5)  # New: messages allowed per hour
     # Optionally: rate_limit fields
     messages = relationship("Message", back_populates="token")
 

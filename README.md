@@ -84,6 +84,13 @@ All actions require admin authentication. Credentials are encrypted in the datab
 - Pagination controls
 - Displays time, token, message, and status for each entry
 
+## Per-Token Rate Limiting
+
+- Each token now has a configurable rate limit (messages per hour).
+- Set the rate limit when creating or rotating a token in the admin UI.
+- The `/send` endpoint enforces this limit per token.
+- If the limit is exceeded, the API returns HTTP 429 with a message indicating the allowed rate.
+
 ## Environment
 - Python 3.11+
 - FastAPI

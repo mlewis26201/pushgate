@@ -11,6 +11,7 @@
             <ul id="nav-mobile" class="right hide-on-med-and-down">
                 <li class="active"><a href="/pushgate/tokens">Tokens</a></li>
                 <li><a href="/pushgate/pushover-config">Pushover Config</a></li>
+                <li><a href="/pushgate/messages">Messages</a></li>
                 <li><a href="/pushgate/logout">Logout</a></li>
             </ul>
         </div>
@@ -30,6 +31,7 @@
                             <th>Token</th>
                             <th>Created At</th>
                             <th>Last Used</th>
+                            <th>Rate Limit (msg/hr)</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -40,10 +42,12 @@
                             <td><code>{{ t.token }}</code></td>
                             <td>{{ t.created_at }}</td>
                             <td>{{ t.last_used or '' }}</td>
+                            <td>{{ t.rate_limit_per_hour }}</td>
                             <td>
                                 <form method="post" action="/pushgate/tokens/rotate" style="display:inline;">
                                     <input type="hidden" name="token_id" value="{{ t.id }}">
-                                    <button class="btn-small orange" type="submit">Rotate</button>
+                                    <input type="number" name="rate_limit_per_hour" min="1" value="{{ t.rate_limit_per_hour }}" style="width: 80px; display:inline;" title="Rate limit per hour">
+                                    <button class="btn-small orange" type="submit">Rotate/Update</button>
                                 </form>
                                 <form method="post" action="/pushgate/tokens/delete" style="display:inline;">
                                     <input type="hidden" name="token_id" value="{{ t.id }}">
@@ -55,6 +59,10 @@
                     </tbody>
                 </table>
                 <form method="post" action="/pushgate/tokens/create" style="margin-top:2rem;">
+                    <div class="input-field" style="max-width: 200px; display:inline-block;">
+                        <input type="number" name="rate_limit_per_hour" min="1" value="5" id="rate_limit_per_hour">
+                        <label for="rate_limit_per_hour" class="active">Rate Limit (msg/hr)</label>
+                    </div>
                     <button class="btn green" type="submit">Create New Token</button>
                 </form>
             </div>
