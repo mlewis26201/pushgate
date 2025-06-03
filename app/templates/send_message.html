@@ -31,10 +31,25 @@
                     <textarea id="message" name="message" class="materialize-textarea" required maxlength="1024"></textarea>
                     <label for="message">Message (max 1024 chars)</label>
                 </div>
+                <div class="input-field">
+                    <select id="pushover_config_id" name="pushover_config_id" required>
+                        <option value="" disabled selected>Select Pushover Config</option>
+                        {% for c in configs %}
+                        <option value="{{ c.id }}">{{ c.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <label for="pushover_config_id">Pushover Config</label>
+                </div>
                 <button class="btn blue-grey darken-3" type="submit">Send Message</button>
             </form>
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var elems = document.querySelectorAll('select');
+            M.FormSelect.init(elems);
+        });
+    </script>
 </body>
 </html>

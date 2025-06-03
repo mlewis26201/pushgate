@@ -25,6 +25,7 @@ class Message(Base):
 class PushoverConfig(Base):
     __tablename__ = "pushover_config"
     id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False, unique=True)  # New: human-friendly name
     encrypted_app_token = Column(String, nullable=False)
     encrypted_user_key = Column(String, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow)

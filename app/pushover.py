@@ -6,8 +6,9 @@ from sqlalchemy.orm import Session
 
 PUSHOVER_API_URL = "https://api.pushover.net/1/messages.json"
 
-def send_pushover_message(db: Session, message: str):
-    config = db.query(PushoverConfig).first()
+def send_pushover_message(db: Session, message: str, config=None):
+    if config is None:
+        config = db.query(PushoverConfig).first()
     if not config:
         raise Exception("Pushover config not set")
     app_token = decrypt(config.encrypted_app_token)

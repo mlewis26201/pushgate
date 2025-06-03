@@ -103,32 +103,44 @@ def delete_token(request: Request, token_id: int = Form(...), db: Session = Depe
 
 @app.get("/pushover-config", response_class=HTMLResponse)
 def pushover_config_page(request: Request, db: Session = Depends(get_db), admin=Depends(get_current_admin), msg: str = Query(None)):
-    config = db.query(PushoverConfig).first()
-    app_token = user_key = ""
-    if config:
-        try:
-            app_token = decrypt(config.encrypted_app_token)
-            user_key = decrypt(config.encrypted_user_key)
-        except Exception:
-            app_token = user_key = "<decryption error>"
+    configs = db.query(PushoverConfig).all()
     csrf_token = get_csrf_token(request)
-    return templates.TemplateResponse("pushover_config.html", {"request": request, "app_token": app_token, "user_key": user_key, "msg": msg, "csrf_token": csrf_token})
+    return templates.TemplateResponse("pushover_config.html", {"request": request, "configs": configs, "msg": msg, "csrf_token": csrf_token})
 
-@app.post("/pushover-config/update")
-def update_pushover_config(request: Request, app_token: str = Form(...), user_key: str = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin), csrf_token: str = Form(...)):
+@app.post("/pushover-config/add")
+def add_pushover_config(request: Request, name: str = Form(...), app_token: str = Form(...), user_key: str = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin), csrf_token: str = Form(...)):
     verify_csrf(request, csrf_token)
-    config = db.query(PushoverConfig).first()
+    from .crypto import encrypt
     enc_app_token = encrypt(app_token)
     enc_user_key = encrypt(user_key)
-    if config:
-        config.encrypted_app_token = enc_app_token
-        config.encrypted_user_key = enc_user_key
-        config.updated_at = datetime.utcnow()
-    else:
-        config = PushoverConfig(encrypted_app_token=enc_app_token, encrypted_user_key=enc_user_key)
-        db.add(config)
+    config = PushoverConfig(name=name, encrypted_app_token=enc_app_token, encrypted_user_key=enc_user_key)
+    db.add(config)
+    db.commit()
+    return RedirectResponse(url="/pushgate/pushover-config?msg=Config+added", status_code=303)
+
+@app.post("/pushover-config/update")
+def update_pushover_config(request: Request, config_id: int = Form(...), name: str = Form(...), app_token: str = Form(...), user_key: str = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin), csrf_token: str = Form(...)):
+    verify_csrf(request, csrf_token)
+    config = db.query(PushoverConfig).filter(PushoverConfig.id == config_id).first()
+    if not config:
+        return RedirectResponse(url="/pushgate/pushover-config?msg=Config+not+found", status_code=303)
+    from .crypto import encrypt
+    config.name = name
+    config.encrypted_app_token = encrypt(app_token)
+    config.encrypted_user_key = encrypt(user_key)
+    config.updated_at = datetime.utcnow()
     db.commit()
     return RedirectResponse(url="/pushgate/pushover-config?msg=Config+updated", status_code=303)
+
+@app.post("/pushover-config/delete")
+def delete_pushover_config(request: Request, config_id: int = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin), csrf_token: str = Form(...)):
+    verify_csrf(request, csrf_token)
+    config = db.query(PushoverConfig).filter(PushoverConfig.id == config_id).first()
+    if not config:
+        return RedirectResponse(url="/pushgate/pushover-config?msg=Config+not+found", status_code=303)
+    db.delete(config)
+    db.commit()
+    return RedirectResponse(url="/pushgate/pushover-config?msg=Config+deleted", status_code=303)
 
 @app.post("/send")
 def send_message(token: str = Form(...), message: str = Form(...), db: Session = Depends(get_db)):
@@ -232,23 +244,22 @@ def messages_page(
     )
 
 @app.get("/send-message", response_class=HTMLResponse)
-def send_message_form(request: Request, admin=Depends(get_current_admin), msg: str = Query(None), error: str = Query(None)):
-    return templates.TemplateResponse("send_message.html", {"request": request, "msg": msg, "error": error})
+def send_message_form(request: Request, db: Session = Depends(get_db), admin=Depends(get_current_admin), msg: str = Query(None), error: str = Query(None)):
+    configs = db.query(PushoverConfig).all()
+    return templates.TemplateResponse("send_message.html", {"request": request, "msg": msg, "error": error, "configs": configs})
 
 @app.post("/send-message", response_class=HTMLResponse)
-def send_message_admin(request: Request, message: str = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin)):
-    # Use the first token in the DB for sending, or allow admin to select (simple version: use first)
-    from .models import Token
+def send_message_admin(request: Request, message: str = Form(...), pushover_config_id: int = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin)):
+    from .models import Token, PushoverConfig
     tokens = db.query(Token).all()
     if not tokens:
         return RedirectResponse(url="/pushgate/send-message?error=No+tokens+available", status_code=303)
     token = decrypt(tokens[0].encrypted_token)
-    # Reuse the /send logic
-    from fastapi import status as fastapi_status
-    from fastapi.responses import JSONResponse
+    config = db.query(PushoverConfig).filter(PushoverConfig.id == pushover_config_id).first()
+    if not config:
+        return RedirectResponse(url="/pushgate/send-message?error=Invalid+Pushover+config", status_code=303)
     try:
-        # Call the /send endpoint logic directly
-        response = send_message(token=token, message=message, db=db)
+        response = send_message(token=token, message=message, db=db, pushover_config=config)
         return RedirectResponse(url="/pushgate/send-message?msg=Message+sent", status_code=303)
     except HTTPException as e:
         return RedirectResponse(url=f"/pushgate/send-message?error={e.detail}", status_code=303)
