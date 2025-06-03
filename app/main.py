@@ -7,7 +7,7 @@ import uvicorn
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.types import ASGIApp
-import secrets
+import secrets as pysecrets
 from sqlalchemy.orm import Session
 from .db import get_db, init_db
 from .auth import get_current_admin, get_admin_password
@@ -24,6 +24,20 @@ app.add_middleware(SessionMiddleware, secret_key="dummy")  # Will be replaced wi
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+# CSRF token helpers
+CSRF_SESSION_KEY = "csrf_token"
+def get_csrf_token(request: Request):
+    token = request.session.get(CSRF_SESSION_KEY)
+    if not token:
+        token = pysecrets.token_urlsafe(32)
+        request.session[CSRF_SESSION_KEY] = token
+    return token
+
+def verify_csrf(request: Request, token: str):
+    session_token = request.session.get(CSRF_SESSION_KEY)
+    if not session_token or session_token != token:
+        raise HTTPException(status_code=400, detail="Invalid CSRF token")
 
 @app.on_event("startup")
 def on_startup():
@@ -45,11 +59,13 @@ def tokens_page(request: Request, db: Session = Depends(get_db), admin=Depends(g
             "last_used": t.last_used,
             "rate_limit_per_hour": t.rate_limit_per_hour
         })
-    return templates.TemplateResponse("tokens.html", {"request": request, "tokens": decrypted_tokens, "msg": msg})
+    csrf_token = get_csrf_token(request)
+    return templates.TemplateResponse("tokens.html", {"request": request, "tokens": decrypted_tokens, "msg": msg, "csrf_token": csrf_token})
 
 @app.post("/tokens/create")
-def create_token(request: Request, db: Session = Depends(get_db), admin=Depends(get_current_admin), rate_limit_per_hour: int = Form(5)):
-    new_token = secrets.token_urlsafe(32)
+def create_token(request: Request, db: Session = Depends(get_db), admin=Depends(get_current_admin), rate_limit_per_hour: int = Form(5), csrf_token: str = Form(...)):
+    verify_csrf(request, csrf_token)
+    new_token = pysecrets.token_urlsafe(32)
     encrypted = encrypt(new_token)
     token_obj = Token(encrypted_token=encrypted, created_at=datetime.utcnow(), rate_limit_per_hour=rate_limit_per_hour)
     db.add(token_obj)
@@ -57,11 +73,12 @@ def create_token(request: Request, db: Session = Depends(get_db), admin=Depends(
     return RedirectResponse(url="/pushgate/tokens?msg=Token+created", status_code=303)
 
 @app.post("/tokens/rotate")
-def rotate_token(request: Request, token_id: int = Form(...), rate_limit_per_hour: int = Form(None), db: Session = Depends(get_db), admin=Depends(get_current_admin)):
+def rotate_token(request: Request, token_id: int = Form(...), rate_limit_per_hour: int = Form(None), db: Session = Depends(get_db), admin=Depends(get_current_admin), csrf_token: str = Form(...)):
+    verify_csrf(request, csrf_token)
     token_obj = db.query(Token).filter(Token.id == token_id).first()
     if not token_obj:
         return RedirectResponse(url="/pushgate/tokens?msg=Token+not+found", status_code=303)
-    new_token = secrets.token_urlsafe(32)
+    new_token = pysecrets.token_urlsafe(32)
     token_obj.encrypted_token = encrypt(new_token)
     token_obj.created_at = datetime.utcnow()
     if rate_limit_per_hour is not None:
@@ -70,7 +87,8 @@ def rotate_token(request: Request, token_id: int = Form(...), rate_limit_per_hou
     return RedirectResponse(url="/pushgate/tokens?msg=Token+rotated", status_code=303)
 
 @app.post("/tokens/delete")
-def delete_token(request: Request, token_id: int = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin)):
+def delete_token(request: Request, token_id: int = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin), csrf_token: str = Form(...)):
+    verify_csrf(request, csrf_token)
     token_obj = db.query(Token).filter(Token.id == token_id).first()
     if not token_obj:
         return RedirectResponse(url="/pushgate/tokens?msg=Token+not+found", status_code=303)
@@ -88,10 +106,12 @@ def pushover_config_page(request: Request, db: Session = Depends(get_db), admin=
             user_key = decrypt(config.encrypted_user_key)
         except Exception:
             app_token = user_key = "<decryption error>"
-    return templates.TemplateResponse("pushover_config.html", {"request": request, "app_token": app_token, "user_key": user_key, "msg": msg})
+    csrf_token = get_csrf_token(request)
+    return templates.TemplateResponse("pushover_config.html", {"request": request, "app_token": app_token, "user_key": user_key, "msg": msg, "csrf_token": csrf_token})
 
 @app.post("/pushover-config/update")
-def update_pushover_config(request: Request, app_token: str = Form(...), user_key: str = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin)):
+def update_pushover_config(request: Request, app_token: str = Form(...), user_key: str = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin), csrf_token: str = Form(...)):
+    verify_csrf(request, csrf_token)
     config = db.query(PushoverConfig).first()
     enc_app_token = encrypt(app_token)
     enc_user_key = encrypt(user_key)
@@ -139,16 +159,19 @@ def send_message(token: str = Form(...), message: str = Form(...), db: Session =
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, msg: str = Query(None)):
-    return templates.TemplateResponse("login.html", {"request": request, "error": None, "msg": msg})
+    csrf_token = get_csrf_token(request)
+    return templates.TemplateResponse("login.html", {"request": request, "error": None, "msg": msg, "csrf_token": csrf_token})
 
 @app.post("/login", response_class=HTMLResponse)
-def login(request: Request, password: str = Form(...)):
+def login(request: Request, password: str = Form(...), csrf_token: str = Form(...)):
+    verify_csrf(request, csrf_token)
     admin_password = get_admin_password()
     if password == admin_password:
         request.session["admin_authenticated"] = True
         return RedirectResponse(url="/pushgate/tokens?msg=Login+successful", status_code=303)
     else:
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid password", "msg": None})
+        csrf_token = get_csrf_token(request)
+        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid password", "msg": None, "csrf_token": csrf_token})
 
 @app.get("/logout")
 def logout(request: Request):

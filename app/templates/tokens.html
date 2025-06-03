@@ -47,10 +47,12 @@
                                 <form method="post" action="/pushgate/tokens/rotate" style="display:inline;">
                                     <input type="hidden" name="token_id" value="{{ t.id }}">
                                     <input type="number" name="rate_limit_per_hour" min="1" value="{{ t.rate_limit_per_hour }}" style="width: 80px; display:inline;" title="Rate limit per hour">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                     <button class="btn-small orange" type="submit">Rotate/Update</button>
                                 </form>
                                 <form method="post" action="/pushgate/tokens/delete" style="display:inline;">
                                     <input type="hidden" name="token_id" value="{{ t.id }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                     <button class="btn-small red" type="submit" onclick="return confirm('Delete this token?')">Delete</button>
                                 </form>
                             </td>
@@ -63,6 +65,7 @@
                         <input type="number" name="rate_limit_per_hour" min="1" value="5" id="rate_limit_per_hour">
                         <label for="rate_limit_per_hour" class="active">Rate Limit (msg/hr)</label>
                     </div>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <button class="btn green" type="submit">Create New Token</button>
                 </form>
             </div>
