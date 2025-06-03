@@ -25,6 +25,11 @@ The Pushgate admin endpoints allow authorized administrators to manage tokens an
   - `GET /pushgate/pushover-config`: View current Pushover API credentials (decrypted for display).
   - `POST /pushgate/pushover-config/update`: Update and save new Pushover API credentials (encrypted at rest).
 
+## Send Message (Admin UI)
+- Go to `/pushgate/send-message` after logging in.
+- Enter your message and select the desired Pushover config from the dropdown.
+- Submit the form to send a test message using the selected config.
+
 ## Security
 - All admin endpoints require a valid session (login required).
 - Password is never stored in the database; it is read from a Docker secret at runtime.

@@ -72,6 +72,8 @@ All admin endpoints require authentication. Sessions are managed securely using 
 
 - `/pushgate/send` (POST): Accepts a `token` and `message` via form data. Validates the token, checks per-token Pushover rate limit, sends the message to Pushover, and logs the message in the database. Returns a JSON response with status or error.
 
+**Admin UI Note:** When sending a message from the admin web interface, you can select which Pushover config to use from a dropdown menu. This allows testing or sending messages with different app/user credentials.
+
 Example request:
 
 ```bash
@@ -125,3 +127,18 @@ All actions require admin authentication. Credentials are encrypted in the datab
 
 ## Reverse Proxy/Path Prefix
 If running behind a reverse proxy with a path prefix (e.g. `/pushgate/`), the app is pre-configured to work with this using FastAPI's `root_path` setting.
+
+## Troubleshooting
+
+- **App does not start:**
+  - Ensure all required secrets (`fernet_key`, `admin_password`) are present in `/run/secrets/` or your specified secrets directory.
+  - Check Docker logs for errors: `docker logs <container_id>`
+  - Make sure the database file is writable by the container (if using SQLite).
+- **Cannot log in as admin:**
+  - Double-check the admin password in your secrets directory.
+- **Pushover messages not delivered:**
+  - Verify the selected Pushover config is valid and active.
+  - Check rate limits and message logs in the admin UI.
+- **Other issues:**
+  - Review the documentation and ensure all setup steps were followed.
+  - For further help, see the logs or open an issue.
