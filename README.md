@@ -2,6 +2,26 @@
 
 A gateway for forwarding HTTP messages to Pushover, with token management, rate limiting, and secure storage.
 
+## Initialization & Setup
+
+Before running Pushgate for the first time, you must initialize secrets and the database:
+
+1. **Run the guided setup script:**
+   ```bash
+   python tools/setup_pushgate.py
+   ```
+   This will prompt you for the admin password, Pushover app token, user key, and optionally generate an encryption key. It will also initialize the database.
+
+2. **(Re)initialize the database only:**
+   ```bash
+   python tools/init_db.py
+   ```
+   Use this if you want to reset the database tables without changing secrets.
+
+Secrets are stored in `/run/secrets/` by default, or a directory you specify during setup.
+
+---
+
 ## Features
 - Accepts messages via HTTP and forwards to Pushover
 - Token-based authentication and management (create, rotate, delete)
