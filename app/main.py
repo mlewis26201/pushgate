@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Depends, Form, HTTPException, status, Query
+import re
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
@@ -127,6 +128,12 @@ def update_pushover_config(request: Request, app_token: str = Form(...), user_ke
 
 @app.post("/send")
 def send_message(token: str = Form(...), message: str = Form(...), db: Session = Depends(get_db)):
+    # Input validation (Pushover rules)
+    if not message or len(message.encode('utf-8')) > 1024:
+        raise HTTPException(status_code=400, detail="Message is required and must be at most 1024 UTF-8 bytes.")
+    if not token or not re.fullmatch(r"[A-Za-z0-9]{30}", token):
+        raise HTTPException(status_code=400, detail="Token must be 30 alphanumeric characters.")
+
     # Validate token
     token_objs = db.query(Token).all()
     valid_token = None
