@@ -259,7 +259,8 @@ def send_message_form(request: Request, db: Session = Depends(get_db), admin=Dep
 
 @app.post("/send-message", response_class=HTMLResponse)
 def send_message_admin(request: Request, message: str = Form(...), pushover_config_id: int = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin)):
-    from .models import Token, PushoverConfig
+    from .models import Token, PushoverConfig, Message
+    from .pushover import send_pushover_message
     tokens = db.query(Token).all()
     if not tokens:
         return RedirectResponse(url="/pushgate/send-message?error=No+tokens+available", status_code=303)
@@ -268,7 +269,14 @@ def send_message_admin(request: Request, message: str = Form(...), pushover_conf
     if not config:
         return RedirectResponse(url="/pushgate/send-message?error=Invalid+Pushover+config", status_code=303)
     try:
-        response = send_message(token=token, message=message, db=db, pushover_config=config)
-        return RedirectResponse(url="/pushgate/send-message?msg=Message+sent", status_code=303)
+        status_code, resp_text = send_pushover_message(db, message, config=config)
+        # Log message
+        msg = Message(token_id=tokens[0].id, message=message, status=str(status_code), timestamp=datetime.utcnow())
+        db.add(msg)
+        db.commit()
+        if status_code == 200:
+            return RedirectResponse(url="/pushgate/send-message?msg=Message+sent", status_code=303)
+        else:
+            return RedirectResponse(url=f"/pushgate/send-message?error=Pushover+error:+{resp_text}", status_code=303)
     except HTTPException as e:
         return RedirectResponse(url=f"/pushgate/send-message?error={e.detail}", status_code=303)
