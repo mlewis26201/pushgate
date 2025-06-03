@@ -143,7 +143,7 @@ def delete_pushover_config(request: Request, config_id: int = Form(...), db: Ses
     return RedirectResponse(url="/pushgate/pushover-config?msg=Config+deleted", status_code=303)
 
 @app.post("/send")
-def send_message(token: str = Form(...), message: str = Form(...), db: Session = Depends(get_db)):
+def send_message(token: str = Form(...), message: str = Form(...), db: Session = Depends(get_db), pushover_config_id: int = Form(None)):
     # Input validation (Pushover rules)
     if not message or len(message.encode('utf-8')) > 1024:
         raise HTTPException(status_code=400, detail="Message is required and must be at most 1024 UTF-8 bytes.")
@@ -167,8 +167,14 @@ def send_message(token: str = Form(...), message: str = Form(...), db: Session =
     if not check_token_rate_limit(db, valid_token.id, valid_token.rate_limit_per_hour):
         raise HTTPException(status_code=429, detail=f"Rate limit exceeded. Max {valid_token.rate_limit_per_hour} messages per hour. Please try again later.")
 
+    # Select pushover config
+    config = None
+    if pushover_config_id is not None:
+        config = db.query(PushoverConfig).filter(PushoverConfig.id == pushover_config_id).first()
+        if not config:
+            raise HTTPException(status_code=400, detail="Invalid pushover_config_id")
     # Send to Pushover
-    status_code, resp_text = send_pushover_message(db, message)
+    status_code, resp_text = send_pushover_message(db, message, config=config)
     # Log message
     from .models import Message
     msg = Message(token_id=valid_token.id, message=message, status=str(status_code), timestamp=datetime.utcnow())

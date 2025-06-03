@@ -13,12 +13,15 @@ POST /pushgate/send
 - Required fields:
   - `token`: The client token (string, must be valid and active)
   - `message`: The message to send (string, required by Pushover)
+- Optional fields:
+  - `pushover_config_id`: The ID of the Pushover config to use (integer, must match a config in the system). If omitted, the default (first) config is used.
 
 ### Example Request (curl)
 ```
 curl -X POST \
   -F "token=YOUR_TOKEN" \
   -F "message=Hello from Pushgate!" \
+  -F "pushover_config_id=2" \
   https://your.domain/pushgate/send
 ```
 

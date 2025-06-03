@@ -72,7 +72,7 @@ All admin endpoints require authentication. Sessions are managed securely using 
 
 - `/pushgate/send` (POST): Accepts a `token` and `message` via form data. Validates the token, checks per-token Pushover rate limit, sends the message to Pushover, and logs the message in the database. Returns a JSON response with status or error.
 
-**Admin UI Note:** When sending a message from the admin web interface, you can select which Pushover config to use from a dropdown menu. This allows testing or sending messages with different app/user credentials.
+**New:** API clients can optionally select which Pushover config to use by passing a `pushover_config_id` field (integer) in the request. If omitted, the default config is used.
 
 Example request:
 
@@ -80,6 +80,7 @@ Example request:
 curl -X POST \
   -F "token=YOUR_TOKEN" \
   -F "message=Hello from Pushgate!" \
+  -F "pushover_config_id=2" \
   https://your.domain/pushgate/send
 ```
 
