@@ -283,3 +283,23 @@ def send_message_admin(request: Request, message: str = Form(...), pushover_conf
             return RedirectResponse(url=f"/pushgate/send-message?error=Pushover+error:+{resp_text}", status_code=303)
     except HTTPException as e:
         return RedirectResponse(url=f"/pushgate/send-message?error={e.detail}", status_code=303)
+
+@app.get("/change-password", response_class=HTMLResponse)
+def change_password_page(request: Request, admin=Depends(get_current_admin), msg: str = Query(None), error: str = Query(None)):
+    csrf_token = get_csrf_token(request)
+    return templates.TemplateResponse("change_password.html", {"request": request, "msg": msg, "error": error, "csrf_token": csrf_token})
+
+@app.post("/change-password", response_class=HTMLResponse)
+def change_password(request: Request, old_password: str = Form(...), new_password: str = Form(...), confirm_password: str = Form(...), csrf_token: str = Form(...)):
+    verify_csrf(request, csrf_token)
+    admin_password = get_admin_password()
+    if old_password != admin_password:
+        csrf_token = get_csrf_token(request)
+        return templates.TemplateResponse("change_password.html", {"request": request, "msg": None, "error": "Old password is incorrect", "csrf_token": csrf_token})
+    if new_password != confirm_password:
+        csrf_token = get_csrf_token(request)
+        return templates.TemplateResponse("change_password.html", {"request": request, "msg": None, "error": "New passwords do not match", "csrf_token": csrf_token})
+    # Write new password to secret file
+    with open("/run/secrets/admin_password", "w") as f:
+        f.write(new_password)
+    return RedirectResponse(url="/pushgate/login?msg=Password+changed+successfully", status_code=303)
