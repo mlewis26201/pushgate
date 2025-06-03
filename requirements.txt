@@ -4,3 +4,4 @@ sqlalchemy
 cryptography
 jinja2
 requests
+itsdangerous
