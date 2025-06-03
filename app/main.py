@@ -13,7 +13,7 @@ from .db import get_db, init_db
 from .auth import get_current_admin, get_admin_password
 from .pushover import send_pushover_message
 from .rate_limit import check_token_rate_limit
-from .models import Token, PushoverConfig
+from .models import Token, PushoverConfig, Message
 from .crypto import encrypt, decrypt
 from datetime import datetime
 
@@ -124,7 +124,6 @@ def send_message(token: str = Form(...), message: str = Form(...), db: Session =
     # Send to Pushover
     status_code, resp_text = send_pushover_message(db, message)
     # Log message
-    from .models import Message
     msg = Message(token_id=valid_token.id, message=message, status=str(status_code), timestamp=datetime.utcnow())
     db.add(msg)
     db.commit()
@@ -151,3 +150,45 @@ def login(request: Request, password: str = Form(...)):
 def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/pushgate/login?msg=Logged+out", status_code=303)
+
+@app.get("/messages", response_class=HTMLResponse)
+def messages_page(
+    request: Request,
+    db: Session = Depends(get_db),
+    admin=Depends(get_current_admin),
+    token_id: int = Query(None),
+    status: str = Query(None),
+    search: str = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
+    query = db.query(Message)
+    if token_id:
+        query = query.filter(Message.token_id == token_id)
+    if status:
+        query = query.filter(Message.status == status)
+    if search:
+        query = query.filter(Message.message.ilike(f"%{search}%"))
+    total = query.count()
+    messages = (
+        query.order_by(Message.timestamp.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+    tokens = db.query(Token).all()
+    token_map = {t.id: decrypt(t.encrypted_token) for t in tokens}
+    return templates.TemplateResponse(
+        "messages.html",
+        {
+            "request": request,
+            "messages": messages,
+            "token_map": token_map,
+            "token_id": token_id,
+            "status": status,
+            "search": search,
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+        },
+    )

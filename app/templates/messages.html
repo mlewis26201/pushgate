@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Message History</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+</head>
+<body class="grey lighten-4">
+    <nav class="blue-grey darken-3">
+        <div class="nav-wrapper container">
+            <a href="/pushgate/tokens" class="brand-logo">Pushgate Admin</a>
+            <ul id="nav-mobile" class="right hide-on-med-and-down">
+                <li><a href="/pushgate/tokens">Tokens</a></li>
+                <li><a href="/pushgate/pushover-config">Pushover Config</a></li>
+                <li class="active"><a href="/pushgate/messages">Messages</a></li>
+                <li><a href="/pushgate/logout">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container" style="margin-top: 2rem;">
+        <h4>Message History</h4>
+        <form method="get" action="/pushgate/messages" class="row">
+            <div class="input-field col s3">
+                <select name="token_id">
+                    <option value="" {% if not token_id %}selected{% endif %}>All Tokens</option>
+                    {% for tid, tval in token_map.items() %}
+                    <option value="{{ tid }}" {% if token_id and tid == token_id %}selected{% endif %}>{{ tval }}</option>
+                    {% endfor %}
+                </select>
+                <label>Token</label>
+            </div>
+            <div class="input-field col s2">
+                <select name="status">
+                    <option value="" {% if not status %}selected{% endif %}>All Status</option>
+                    <option value="200" {% if status == '200' %}selected{% endif %}>200 (Success)</option>
+                    <option value="429" {% if status == '429' %}selected{% endif %}>429 (Rate Limit)</option>
+                    <option value="401" {% if status == '401' %}selected{% endif %}>401 (Unauthorized)</option>
+                    <option value="502" {% if status == '502' %}selected{% endif %}>502 (Pushover Error)</option>
+                </select>
+                <label>Status</label>
+            </div>
+            <div class="input-field col s4">
+                <input type="text" name="search" value="{{ search or '' }}" placeholder="Search message text">
+                <label for="search" class="active">Search</label>
+            </div>
+            <div class="input-field col s2">
+                <button class="btn blue-grey darken-3" type="submit">Filter</button>
+            </div>
+        </form>
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title">Messages ({{ total }})</span>
+                <table class="striped responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Token</th>
+                            <th>Message</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in messages %}
+                        <tr>
+                            <td>{{ m.timestamp }}</td>
+                            <td><code>{{ token_map.get(m.token_id, 'Unknown') }}</code></td>
+                            <td style="max-width: 400px; word-break: break-all;">{{ m.message }}</td>
+                            <td>{{ m.status }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <ul class="pagination center-align">
+                    {% set last_page = (total // page_size) + (1 if total % page_size else 0) %}
+                    <li class="waves-effect {% if page == 1 %}disabled{% endif %}"><a href="?page={{ page - 1 if page > 1 else 1 }}&token_id={{ token_id or '' }}&status={{ status or '' }}&search={{ search or '' }}">&laquo;</a></li>
+                    {% for p in range(1, last_page + 1) %}
+                    <li class="waves-effect {% if p == page %}active blue-grey darken-3 white-text{% endif %}"><a href="?page={{ p }}&token_id={{ token_id or '' }}&status={{ status or '' }}&search={{ search or '' }}">{{ p }}</a></li>
+                    {% endfor %}
+                    <li class="waves-effect {% if page == last_page %}disabled{% endif %}"><a href="?page={{ page + 1 if page < last_page else last_page }}&token_id={{ token_id or '' }}&status={{ status or '' }}&search={{ search or '' }}">&raquo;</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var elems = document.querySelectorAll('select');
+            M.FormSelect.init(elems);
+        });
+    </script>
+</body>
+</html>

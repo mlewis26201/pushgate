@@ -73,6 +73,17 @@ Possible responses:
 
 All actions require admin authentication. Credentials are encrypted in the database and used for sending notifications.
 
+## Message History Endpoint
+
+- `/pushgate/messages` (GET): Admin UI to view message history. Supports filtering by token, status, and text search. Results are paginated.
+
+### Features
+- Filter by token (dropdown)
+- Filter by status (dropdown)
+- Text search in message contents
+- Pagination controls
+- Displays time, token, message, and status for each entry
+
 ## Environment
 - Python 3.11+
 - FastAPI
