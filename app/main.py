@@ -230,3 +230,25 @@ def messages_page(
             "total": total,
         },
     )
+
+@app.get("/send-message", response_class=HTMLResponse)
+def send_message_form(request: Request, admin=Depends(get_current_admin), msg: str = Query(None), error: str = Query(None)):
+    return templates.TemplateResponse("send_message.html", {"request": request, "msg": msg, "error": error})
+
+@app.post("/send-message", response_class=HTMLResponse)
+def send_message_admin(request: Request, message: str = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin)):
+    # Use the first token in the DB for sending, or allow admin to select (simple version: use first)
+    from .models import Token
+    tokens = db.query(Token).all()
+    if not tokens:
+        return RedirectResponse(url="/pushgate/send-message?error=No+tokens+available", status_code=303)
+    token = decrypt(tokens[0].encrypted_token)
+    # Reuse the /send logic
+    from fastapi import status as fastapi_status
+    from fastapi.responses import JSONResponse
+    try:
+        # Call the /send endpoint logic directly
+        response = send_message(token=token, message=message, db=db)
+        return RedirectResponse(url="/pushgate/send-message?msg=Message+sent", status_code=303)
+    except HTTPException as e:
+        return RedirectResponse(url=f"/pushgate/send-message?error={e.detail}", status_code=303)

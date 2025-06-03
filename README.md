@@ -25,7 +25,7 @@ Secrets are stored in `/run/secrets/` by default, or a directory you specify dur
 ## Features
 - Accepts messages via HTTP and forwards to Pushover
 - Token-based authentication and management (create, rotate, delete)
-- Admin web UI for tokens, Pushover config, and message history
+- Admin web UI for tokens, Pushover config, message history, and sending messages via a form
 - **Admin dashboard with links to all features**
 - Per-token Pushover rate limiting
 - SQLite for persistent storage
