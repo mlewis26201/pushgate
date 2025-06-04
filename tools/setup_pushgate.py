@@ -99,21 +99,8 @@ def main():
     db.close()
     print("Admin password stored encrypted in the database.")
 
-    # Pushover app token
-    pushover_app_path = os.path.join(secrets_dir, "pushover_app_token")
-    if os.path.exists(pushover_app_path):
-        print(f"Pushover app token already exists at {pushover_app_path}.")
-    else:
-        app_token = input("Enter Pushover app token (30 chars): ").strip()
-        write_secret(pushover_app_path, app_token)
-
-    # Pushover user key
-    pushover_user_path = os.path.join(secrets_dir, "pushover_user_key")
-    if os.path.exists(pushover_user_path):
-        print(f"Pushover user key already exists at {pushover_user_path}.")
-    else:
-        user_key = input("Enter Pushover user key (30 chars): ").strip()
-        write_secret(pushover_user_path, user_key)
+    # Remove pushover app token and user key setup from script
+    # These can now be added later via the admin UI.
 
     print("\nSetup complete!")
 
