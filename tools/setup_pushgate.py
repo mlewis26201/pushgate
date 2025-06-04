@@ -12,7 +12,8 @@ Usage:
 import os
 import getpass
 from cryptography.fernet import Fernet
-from app.db import init_db
+from app.db import init_db, SessionLocal
+from app.models import AdminSettings
 
 DEFAULT_SECRETS_DIR = "./secrets"
 
@@ -48,6 +49,7 @@ def main():
             f.write("")
 
     secrets_dir = input(f"Secrets directory [{DEFAULT_SECRETS_DIR}]: ").strip() or DEFAULT_SECRETS_DIR
+    # Ensure secrets directory exists before using it
     os.makedirs(secrets_dir, exist_ok=True)
     # Set permissions to 0o700 for the secrets directory to ensure write access (especially for Docker volume)
     try:
@@ -55,48 +57,59 @@ def main():
     except Exception as e:
         print(f"Warning: Could not set permissions on {secrets_dir}: {e}")
 
-    # Fernet key
+    # Prompt if this is a new install
+    print("\nIs this a new Pushgate install?")
+    is_new = input("Type 'yes' to initialize a new secrets directory and Fernet key, or 'no' to use existing secrets [yes/no]: ").strip().lower()
     fernet_path = os.path.join(secrets_dir, "fernet_key")
-    if os.path.exists(fernet_path):
-        print(f"Fernet key already exists at {fernet_path}.")
+    if is_new in ("yes", "y"):
+        # Create secrets directory and Fernet key
+        if not os.path.exists(secrets_dir):
+            os.makedirs(secrets_dir, exist_ok=True)
+            try:
+                os.chmod(secrets_dir, 0o700)
+            except Exception as e:
+                print(f"Warning: Could not set permissions on {secrets_dir}: {e}")
+        if os.path.exists(fernet_path):
+            print(f"Fernet key already exists at {fernet_path}. Aborting to avoid overwrite.")
+            return
+        key = Fernet.generate_key().decode()
+        write_secret(fernet_path, key)
+        print(f"New Fernet key created at {fernet_path}.")
+        # Ensure the Fernet key is written before importing encrypt
+        from app.crypto import encrypt
     else:
-        gen = input("Generate new Fernet encryption key? [Y/n]: ").strip().lower()
-        if gen in ("", "y", "yes"):
-            key = Fernet.generate_key().decode()
-            write_secret(fernet_path, key)
-        else:
-            key = input("Paste Fernet key (44 chars, base64): ").strip()
-            write_secret(fernet_path, key)
+        if not os.path.exists(fernet_path) or os.path.getsize(fernet_path) == 0:
+            print("\nNo Fernet key found. You must manually migrate your Fernet key and secrets. See the documentation or use a migration script.")
+            return
+        from app.crypto import encrypt
 
-    # Admin password
-    admin_path = os.path.join(secrets_dir, "admin_password")
-    if os.path.exists(admin_path):
-        print(f"Admin password already exists at {admin_path}.")
-    else:
-        pw = prompt_secret("Set admin password: ")
-        write_secret(admin_path, pw)
-
-    # Pushover app token
-    pushover_app_path = os.path.join(secrets_dir, "pushover_app_token")
-    if os.path.exists(pushover_app_path):
-        print(f"Pushover app token already exists at {pushover_app_path}.")
-    else:
-        app_token = input("Enter Pushover app token (30 chars): ").strip()
-        write_secret(pushover_app_path, app_token)
-
-    # Pushover user key
-    pushover_user_path = os.path.join(secrets_dir, "pushover_user_key")
-    if os.path.exists(pushover_user_path):
-        print(f"Pushover user key already exists at {pushover_user_path}.")
-    else:
-        user_key = input("Enter Pushover user key (30 chars): ").strip()
-        write_secret(pushover_user_path, user_key)
-
-    # Database initialization
+    # Database initialization (ensure tables exist before inserting admin password)
     print("\nInitializing database...")
     init_db()
     print("Database initialized.")
+
+    # Admin password
+    # Only store encrypted admin password in the database (no file)
+    pw = prompt_secret("Set admin password: ")
+    db = SessionLocal()
+    enc_pw = encrypt(pw)
+    admin_settings = AdminSettings(encrypted_password=enc_pw)
+    db.add(admin_settings)
+    db.commit()
+    db.close()
+    print("Admin password stored encrypted in the database.")
+
+    # Remove pushover app token and user key setup from script
+    # These can now be added later via the admin UI.
+
     print("\nSetup complete!")
+    print("\nNext steps:")
+    print("1. Build and start the container:")
+    print("   docker-compose up --build")
+    print("2. Log in to the admin UI at http://localhost:8000/pushgate/login")
+    print("3. Set your Pushover app token and user key via the Admin UI (Pushover Config section).")
+    print("4. Create and manage tokens, send test messages, and review logs via the Admin UI.")
+    print("\nFor more details, see the README.md and tools/README.md.")
 
 if __name__ == "__main__":
     main()

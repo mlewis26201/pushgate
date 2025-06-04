@@ -29,3 +29,9 @@ class PushoverConfig(Base):
     encrypted_app_token = Column(String, nullable=False)
     encrypted_user_key = Column(String, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow)
+
+class AdminSettings(Base):
+    __tablename__ = "admin_settings"
+    id = Column(Integer, primary_key=True, index=True)
+    encrypted_password = Column(String, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow)

@@ -14,7 +14,7 @@ from .db import get_db, init_db
 from .auth import get_current_admin, get_admin_password
 from .pushover import send_pushover_message
 from .rate_limit import check_token_rate_limit
-from .models import Token, PushoverConfig, Message
+from .models import Token, PushoverConfig, Message, AdminSettings
 from .crypto import encrypt, decrypt
 from datetime import datetime
 
@@ -302,4 +302,19 @@ def change_password(request: Request, old_password: str = Form(...), new_passwor
     # Write new password to secret file
     with open("/run/secrets/admin_password", "w") as f:
         f.write(new_password)
+    # Also update in DB
+    db = next(get_db())
+    from sqlalchemy.orm import Session
+    from .models import AdminSettings
+    from .crypto import encrypt
+    enc_pw = encrypt(new_password)
+    admin_settings = db.query(AdminSettings).order_by(AdminSettings.updated_at.desc()).first()
+    if admin_settings:
+        admin_settings.encrypted_password = enc_pw
+        admin_settings.updated_at = datetime.utcnow()
+    else:
+        admin_settings = AdminSettings(encrypted_password=enc_pw)
+        db.add(admin_settings)
+    db.commit()
+    db.close()
     return RedirectResponse(url="/pushgate/login?msg=Password+changed+successfully", status_code=303)
