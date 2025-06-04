@@ -22,4 +22,9 @@ This will discover and run all test scripts in the `tests/` directory.
 - Tests use an in-memory or temporary database by default. If you want to test with a specific database or environment, adjust the test setup accordingly.
 - You can add more test files (e.g., `test_tokens.py`, `test_admin.py`) to cover additional functionality.
 
+## Secrets Management
+- The only secret that must remain in the `secrets/` directory is the Fernet encryption key (`fernet_key`).
+- Admin password and Pushover keys are now stored encrypted in the database and managed via the admin UI.
+- You may safely remove `admin_password`, `pushover_app_token`, and `pushover_user_key` from the secrets directory after migration.
+
 ---

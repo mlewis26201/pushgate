@@ -47,4 +47,10 @@ pip install -r ../requirements.txt
 
 (Assuming you are in the `tools/` directory; adjust the path as needed.)
 
+## Secrets Management
+
+- The only secret that must remain in the `secrets/` directory is the Fernet encryption key (`fernet_key`).
+- Admin password and Pushover keys are now stored encrypted in the database and managed via the admin UI.
+- Use `tools/migrate_secrets_to_db.py` to migrate secrets from files to the database if upgrading.
+
 ---

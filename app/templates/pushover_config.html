@@ -45,8 +45,18 @@
                                     <input type="hidden" name="config_id" value="{{ c.id }}">
                                     <input type="text" name="name" value="{{ c.name }}" required style="width: 120px;">
                                 </td>
-                                <td><input type="text" name="app_token" value="{{ c.encrypted_app_token | decrypt }}" required style="width: 220px;"></td>
-                                <td><input type="text" name="user_key" value="{{ c.encrypted_user_key | decrypt }}" required style="width: 220px;"></td>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <input type="text" name="app_token" value="••••••••••••••••••••••••" required style="width: 180px;" readonly id="app_token_{{c.id}}">
+                                        <button type="button" class="btn-flat" onclick="reveal('app_token_{{c.id}}', '{{ c.encrypted_app_token | decrypt }}', this)">Reveal</button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center;">
+                                        <input type="text" name="user_key" value="••••••••••••••••••••••••" required style="width: 180px;" readonly id="user_key_{{c.id}}">
+                                        <button type="button" class="btn-flat" onclick="reveal('user_key_{{c.id}}', '{{ c.encrypted_user_key | decrypt }}', this)">Reveal</button>
+                                    </div>
+                                </td>
                                 <td>{{ c.updated_at }}</td>
                                 <td>
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -87,5 +97,19 @@
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+    function reveal(inputId, realValue, btn) {
+        var input = document.getElementById(inputId);
+        if (input.readOnly) {
+            input.value = realValue;
+            input.readOnly = false;
+            btn.textContent = 'Hide';
+        } else {
+            input.value = '••••••••••••••••••••••••';
+            input.readOnly = true;
+            btn.textContent = 'Reveal';
+        }
+    }
+    </script>
 </body>
 </html>

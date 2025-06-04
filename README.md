@@ -164,3 +164,37 @@ If running behind a reverse proxy with a path prefix (e.g. `/pushgate/`), the ap
 - **Other issues:**
   - Review the documentation and ensure all setup steps were followed.
   - For further help, see the logs or open an issue.
+
+## Secrets Management Changes
+
+- The only secret that must remain in the `secrets/` directory is the Fernet encryption key (`fernet_key`).
+- Admin password and Pushover keys are now stored encrypted in the database and managed via the admin UI.
+- You may safely remove `admin_password`, `pushover_app_token`, and `pushover_user_key` from the secrets directory after migration.
+
+## Migration
+If you are upgrading from an older version that used secrets files for admin password or Pushover keys, use the migration script:
+
+```bash
+python tools/migrate_secrets_to_db.py --secrets-dir ./secrets
+```
+
+## Setup
+1. **Run the guided setup script (required before docker-compose):**
+   ```bash
+   python tools/setup_pushgate.py
+   ```
+   This will prompt you for the admin password, Pushover app token, user key, and optionally generate an encryption key. It will also initialize the database. **You must do this before running `docker-compose up` for the first time.**
+
+2. **(Re)initialize the database only:**
+   ```bash
+   python tools/init_db.py
+   ```
+   Use this if you want to reset the database tables without changing secrets.
+
+3. **Start the app with Docker Compose:**
+   ```bash
+   docker-compose up --build
+   ```
+   This will start the Pushgate service using the secrets and database you initialized above.
+
+Secrets are stored in `./secrets` by default, or a directory you specify during setup. The Docker container will mount this to `/run/secrets/` internally.
