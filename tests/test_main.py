@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from app.main import app
 
-client = TestClient(app)
+client = TestClient(app, root_path="/pushgate")
 
 def test_login_page():
     response = client.get("/pushgate/login")
