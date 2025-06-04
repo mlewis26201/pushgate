@@ -103,6 +103,13 @@ def main():
     # These can now be added later via the admin UI.
 
     print("\nSetup complete!")
+    print("\nNext steps:")
+    print("1. Build and start the container:")
+    print("   docker-compose up --build")
+    print("2. Log in to the admin UI at http://localhost:8000/pushgate/login")
+    print("3. Set your Pushover app token and user key via the Admin UI (Pushover Config section).")
+    print("4. Create and manage tokens, send test messages, and review logs via the Admin UI.")
+    print("\nFor more details, see the README.md and tools/README.md.")
 
 if __name__ == "__main__":
     main()
