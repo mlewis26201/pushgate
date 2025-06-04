@@ -18,6 +18,40 @@ pytest
 
 This will discover and run all test scripts in the `tests/` directory.
 
+## Running Tests in a Python Virtual Environment
+
+To ensure a clean environment and avoid dependency conflicts, it is recommended to run tests inside a Python virtual environment (venv):
+
+1. Create a virtual environment:
+
+   ```bash
+   python3 -m venv venv
+   ```
+
+2. Activate the virtual environment:
+   - On Linux/macOS:
+     ```bash
+     source venv/bin/activate
+     ```
+   - On Windows:
+     ```cmd
+     venv\Scripts\activate
+     ```
+
+3. Install the required dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Run the tests (from the project root):
+
+   ```bash
+   PYTHONPATH=. pytest
+   ```
+
+This ensures the `app` module is discoverable and all dependencies are isolated to your venv.
+
 ## Notes
 - Tests use an in-memory or temporary database by default. If you want to test with a specific database or environment, adjust the test setup accordingly.
 - You can add more test files (e.g., `test_tokens.py`, `test_admin.py`) to cover additional functionality.
