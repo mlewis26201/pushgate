@@ -12,7 +12,9 @@ Usage:
 import os
 import getpass
 from cryptography.fernet import Fernet
-from app.db import init_db
+from app.db import init_db, SessionLocal
+from app.models import AdminSettings
+from app.crypto import encrypt
 
 DEFAULT_SECRETS_DIR = "./secrets"
 
@@ -75,6 +77,14 @@ def main():
     else:
         pw = prompt_secret("Set admin password: ")
         write_secret(admin_path, pw)
+        # Store encrypted admin password in the database
+        db = SessionLocal()
+        enc_pw = encrypt(pw)
+        admin_settings = AdminSettings(encrypted_password=enc_pw)
+        db.add(admin_settings)
+        db.commit()
+        db.close()
+        print("Admin password also stored encrypted in the database.")
 
     # Pushover app token
     pushover_app_path = os.path.join(secrets_dir, "pushover_app_token")
