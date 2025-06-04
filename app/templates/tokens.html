@@ -42,7 +42,12 @@
                         {% for t in tokens %}
                         <tr>
                             <td>{{ t.id }}</td>
-                            <td><code>{{ t.token }}</code></td>
+                            <td>
+                                <div style="display: flex; align-items: center;">
+                                    <code id="token_{{t.id}}">••••••••••••••••••••••••</code>
+                                    <button type="button" class="btn-flat" onclick="revealToken('token_{{t.id}}', '{{ t.token }}', this)">Reveal</button>
+                                </div>
+                            </td>
                             <td>{{ t.created_at }}</td>
                             <td>{{ t.last_used or '' }}</td>
                             <td>{{ t.rate_limit_per_hour }}</td>
@@ -75,5 +80,17 @@
         </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <script>
+    function revealToken(tokenId, realValue, btn) {
+        var el = document.getElementById(tokenId);
+        if (el.textContent.indexOf('•') !== -1) {
+            el.textContent = realValue;
+            btn.textContent = 'Hide';
+        } else {
+            el.textContent = '••••••••••••••••••••••••';
+            btn.textContent = 'Reveal';
+        }
+    }
+    </script>
 </body>
 </html>
