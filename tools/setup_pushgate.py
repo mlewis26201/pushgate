@@ -58,21 +58,27 @@ def main():
     except Exception as e:
         print(f"Warning: Could not set permissions on {secrets_dir}: {e}")
 
-    # Fernet key logic: always ensure secrets dir and fernet_key exist for fresh installs
-    if not os.path.exists(secrets_dir):
-        os.makedirs(secrets_dir, exist_ok=True)
-        try:
-            os.chmod(secrets_dir, 0o700)
-        except Exception as e:
-            print(f"Warning: Could not set permissions on {secrets_dir}: {e}")
-
-    fernet_path = os.path.join(secrets_dir, "fernet_key")
-    if not os.path.exists(fernet_path) or os.path.getsize(fernet_path) == 0:
-        print(f"No Fernet key found at {fernet_path}. Generating a new Fernet key...")
+    # Prompt if this is a new install
+    print("\nIs this a new Pushgate install?")
+    is_new = input("Type 'yes' to initialize a new secrets directory and Fernet key, or 'no' to use existing secrets [yes/no]: ").strip().lower()
+    if is_new in ("yes", "y"): 
+        # Create secrets directory and Fernet key
+        if not os.path.exists(secrets_dir):
+            os.makedirs(secrets_dir, exist_ok=True)
+            try:
+                os.chmod(secrets_dir, 0o700)
+            except Exception as e:
+                print(f"Warning: Could not set permissions on {secrets_dir}: {e}")
+        fernet_path = os.path.join(secrets_dir, "fernet_key")
+        if os.path.exists(fernet_path):
+            print(f"Fernet key already exists at {fernet_path}. Aborting to avoid overwrite.")
+            return
         key = Fernet.generate_key().decode()
         write_secret(fernet_path, key)
+        print(f"New Fernet key created at {fernet_path}.")
     else:
-        print(f"Fernet key already exists at {fernet_path}.")
+        print("\nYou must manually migrate your Fernet key and secrets. See the documentation or use a migration script.")
+        return
 
     # Admin password
     # Only store encrypted admin password in the database (no file)
