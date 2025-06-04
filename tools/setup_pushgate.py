@@ -50,6 +50,7 @@ def main():
             f.write("")
 
     secrets_dir = input(f"Secrets directory [{DEFAULT_SECRETS_DIR}]: ").strip() or DEFAULT_SECRETS_DIR
+    # Ensure secrets directory exists before using it
     os.makedirs(secrets_dir, exist_ok=True)
     # Set permissions to 0o700 for the secrets directory to ensure write access (especially for Docker volume)
     try:
@@ -59,9 +60,7 @@ def main():
 
     # Fernet key
     fernet_path = os.path.join(secrets_dir, "fernet_key")
-    if os.path.exists(fernet_path):
-        print(f"Fernet key already exists at {fernet_path}.")
-    else:
+    if not os.path.exists(fernet_path):
         gen = input("Generate new Fernet encryption key? [Y/n]: ").strip().lower()
         if gen in ("", "y", "yes"):
             key = Fernet.generate_key().decode()
@@ -69,6 +68,8 @@ def main():
         else:
             key = input("Paste Fernet key (44 chars, base64): ").strip()
             write_secret(fernet_path, key)
+    else:
+        print(f"Fernet key already exists at {fernet_path}.")
 
     # Admin password
     # Only store encrypted admin password in the database (no file)
