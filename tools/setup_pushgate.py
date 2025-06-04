@@ -14,7 +14,6 @@ import getpass
 from cryptography.fernet import Fernet
 from app.db import init_db, SessionLocal
 from app.models import AdminSettings
-from app.crypto import encrypt
 
 DEFAULT_SECRETS_DIR = "./secrets"
 
@@ -61,7 +60,8 @@ def main():
     # Prompt if this is a new install
     print("\nIs this a new Pushgate install?")
     is_new = input("Type 'yes' to initialize a new secrets directory and Fernet key, or 'no' to use existing secrets [yes/no]: ").strip().lower()
-    if is_new in ("yes", "y"): 
+    fernet_path = os.path.join(secrets_dir, "fernet_key")
+    if is_new in ("yes", "y"):
         # Create secrets directory and Fernet key
         if not os.path.exists(secrets_dir):
             os.makedirs(secrets_dir, exist_ok=True)
@@ -69,16 +69,19 @@ def main():
                 os.chmod(secrets_dir, 0o700)
             except Exception as e:
                 print(f"Warning: Could not set permissions on {secrets_dir}: {e}")
-        fernet_path = os.path.join(secrets_dir, "fernet_key")
         if os.path.exists(fernet_path):
             print(f"Fernet key already exists at {fernet_path}. Aborting to avoid overwrite.")
             return
         key = Fernet.generate_key().decode()
         write_secret(fernet_path, key)
         print(f"New Fernet key created at {fernet_path}.")
+        # Ensure the Fernet key is written before importing encrypt
+        from app.crypto import encrypt
     else:
-        print("\nYou must manually migrate your Fernet key and secrets. See the documentation or use a migration script.")
-        return
+        if not os.path.exists(fernet_path) or os.path.getsize(fernet_path) == 0:
+            print("\nNo Fernet key found. You must manually migrate your Fernet key and secrets. See the documentation or use a migration script.")
+            return
+        from app.crypto import encrypt
 
     # Admin password
     # Only store encrypted admin password in the database (no file)
