@@ -297,14 +297,11 @@ def change_password(request: Request, old_password: str = Form(...), new_passwor
     if new_password != confirm_password:
         csrf_token = get_csrf_token(request)
         return templates.TemplateResponse("change_password.html", {"request": request, "msg": None, "error": "New passwords do not match", "csrf_token": csrf_token})
-    # Write new password to secret file
-    with open("/run/secrets/admin_password", "w") as f:
-        f.write(new_password)
-    # Also update in DB
+    # Update password in DB only
     db = next(get_db())
-    from sqlalchemy.orm import Session
     from .models import AdminSettings
     from .crypto import encrypt
+    from datetime import datetime
     enc_pw = encrypt(new_password)
     admin_settings = db.query(AdminSettings).order_by(AdminSettings.updated_at.desc()).first()
     if admin_settings:

@@ -5,10 +5,8 @@ import os
 from .models import AdminSettings
 from .crypto import decrypt
 
-ADMIN_PASSWORD_FILE = "/run/secrets/admin_password"
-
 def get_admin_password():
-    # Try to get from DB first
+    # Only get from DB
     from .db import SessionLocal
     db: Session = SessionLocal()
     admin_settings = db.query(AdminSettings).order_by(AdminSettings.updated_at.desc()).first()
@@ -18,12 +16,8 @@ def get_admin_password():
             return decrypt(admin_settings.encrypted_password)
         except Exception:
             pass
-    # Fallback to file
-    try:
-        with open(ADMIN_PASSWORD_FILE) as f:
-            return f.read().strip()
-    except Exception:
-        return None
+    # No fallback to file; return None if not found
+    return None
 
 def get_current_admin(request: Request):
     # Dummy implementation: check session or prompt for password
