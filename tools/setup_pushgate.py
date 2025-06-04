@@ -83,6 +83,11 @@ def main():
             return
         from app.crypto import encrypt
 
+    # Database initialization (ensure tables exist before inserting admin password)
+    print("\nInitializing database...")
+    init_db()
+    print("Database initialized.")
+
     # Admin password
     # Only store encrypted admin password in the database (no file)
     pw = prompt_secret("Set admin password: ")
@@ -110,10 +115,6 @@ def main():
         user_key = input("Enter Pushover user key (30 chars): ").strip()
         write_secret(pushover_user_path, user_key)
 
-    # Database initialization
-    print("\nInitializing database...")
-    init_db()
-    print("Database initialized.")
     print("\nSetup complete!")
 
 if __name__ == "__main__":
