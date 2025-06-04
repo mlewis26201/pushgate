@@ -8,8 +8,8 @@ def _find_fernet_key_file():
     env_path = os.environ.get("FERNET_KEY_FILE")
     if env_path and os.path.exists(env_path):
         return env_path
-    # 2. Local dev default (relative to project root, not CWD)
-    local_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "secrets", "fernet_key")
+    # 2. Local dev default (relative to project root, not __file__)
+    local_path = os.path.abspath(os.path.join(os.getcwd(), "secrets", "fernet_key"))
     if os.path.exists(local_path):
         return local_path
     # 3. Docker default
