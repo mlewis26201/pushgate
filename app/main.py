@@ -116,7 +116,6 @@ def pushover_config_page(request: Request, db: Session = Depends(get_db), admin=
 @app.post("/pushover-config/add")
 def add_pushover_config(request: Request, name: str = Form(...), app_token: str = Form(...), user_key: str = Form(...), db: Session = Depends(get_db), admin=Depends(get_current_admin), csrf_token: str = Form(...)):
     verify_csrf(request, csrf_token)
-    from .crypto import encrypt
     enc_app_token = encrypt(app_token)
     enc_user_key = encrypt(user_key)
     config = PushoverConfig(name=name, encrypted_app_token=enc_app_token, encrypted_user_key=enc_user_key)
@@ -130,7 +129,6 @@ def update_pushover_config(request: Request, config_id: int = Form(...), name: s
     config = db.query(PushoverConfig).filter(PushoverConfig.id == config_id).first()
     if not config:
         return RedirectResponse(url="/pushgate/pushover-config?msg=Config+not+found", status_code=303)
-    from .crypto import encrypt
     config.name = name
     config.encrypted_app_token = encrypt(app_token)
     config.encrypted_user_key = encrypt(user_key)
