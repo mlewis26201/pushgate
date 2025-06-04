@@ -71,20 +71,15 @@ def main():
             write_secret(fernet_path, key)
 
     # Admin password
-    admin_path = os.path.join(secrets_dir, "admin_password")
-    if os.path.exists(admin_path):
-        print(f"Admin password already exists at {admin_path}.")
-    else:
-        pw = prompt_secret("Set admin password: ")
-        write_secret(admin_path, pw)
-        # Store encrypted admin password in the database
-        db = SessionLocal()
-        enc_pw = encrypt(pw)
-        admin_settings = AdminSettings(encrypted_password=enc_pw)
-        db.add(admin_settings)
-        db.commit()
-        db.close()
-        print("Admin password also stored encrypted in the database.")
+    # Only store encrypted admin password in the database (no file)
+    pw = prompt_secret("Set admin password: ")
+    db = SessionLocal()
+    enc_pw = encrypt(pw)
+    admin_settings = AdminSettings(encrypted_password=enc_pw)
+    db.add(admin_settings)
+    db.commit()
+    db.close()
+    print("Admin password stored encrypted in the database.")
 
     # Pushover app token
     pushover_app_path = os.path.join(secrets_dir, "pushover_app_token")
