@@ -58,16 +58,19 @@ def main():
     except Exception as e:
         print(f"Warning: Could not set permissions on {secrets_dir}: {e}")
 
-    # Fernet key
+    # Fernet key logic: always ensure secrets dir and fernet_key exist for fresh installs
+    if not os.path.exists(secrets_dir):
+        os.makedirs(secrets_dir, exist_ok=True)
+        try:
+            os.chmod(secrets_dir, 0o700)
+        except Exception as e:
+            print(f"Warning: Could not set permissions on {secrets_dir}: {e}")
+
     fernet_path = os.path.join(secrets_dir, "fernet_key")
-    if not os.path.exists(fernet_path):
-        gen = input("Generate new Fernet encryption key? [Y/n]: ").strip().lower()
-        if gen in ("", "y", "yes"):
-            key = Fernet.generate_key().decode()
-            write_secret(fernet_path, key)
-        else:
-            key = input("Paste Fernet key (44 chars, base64): ").strip()
-            write_secret(fernet_path, key)
+    if not os.path.exists(fernet_path) or os.path.getsize(fernet_path) == 0:
+        print(f"No Fernet key found at {fernet_path}. Generating a new Fernet key...")
+        key = Fernet.generate_key().decode()
+        write_secret(fernet_path, key)
     else:
         print(f"Fernet key already exists at {fernet_path}.")
 
